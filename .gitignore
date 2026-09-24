@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+.pytest_cache/
+.ipynb_checkpoints/
+.idea/
+.DS_Store
+
+data/
+results/
+*.parquet
+checkpoints/
+*.pt
+*.bin

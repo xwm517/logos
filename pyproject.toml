@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "logos"
+version = "0.1.0"
+description = "Multi-signal AI-text detection under generator shift."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "scikit-learn", "pandas"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["logos*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
