@@ -40,11 +40,18 @@ def load_hc3():
                 domain = row.get("source")
 
                 if answer and answer.strip():
-                    rows.append({"text": answer, "label": label, "generator": name, "family": name, "domain": domain})
+                    rows.append({
+                        "text": answer,
+                        "label": label,
+                        "generator": name,
+                        "family": name,
+                        "domain": domain,
+                        "question_id": index
+                    })
 
     df = pd.DataFrame(
         rows,
         # The project_data schema to be used for the project
-        columns=["text", "label", "generator", "family", "domain"]
+        columns=["text", "label", "generator", "family", "domain", "question_id"]
     )
     return df

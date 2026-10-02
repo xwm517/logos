@@ -7,7 +7,7 @@ name = "logos"
 version = "0.1.0"
 description = "Multi-signal AI-text detection under generator shift."
 requires-python = ">=3.10"
-dependencies = ["numpy", "scipy", "scikit-learn", "pandas", "datasets", "matplotlib"]
+dependencies = ["numpy", "scipy", "scikit-learn", "pandas", "datasets", "matplotlib", "nltk"]
 
 [project.optional-dependencies]
 dev = ["pytest"]
