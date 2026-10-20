@@ -20,12 +20,14 @@ def load_mage():
     mage = load_dataset("yaful/MAGE")
     # Stack the three splits into one table, remembering where each text came from
     splits = [mage[split].to_pandas().assign(split=split) for split in ["train", "validation", "test"]]
+
     return pd.concat(splits, ignore_index=True)
 
 
 def clean_mage(df):
     # So we can look up a model's family by its name
     model_to_family = {}
+
     for family, models in families.items():
         for model in models:
             model_to_family[model] = family
@@ -51,4 +53,5 @@ def clean_mage(df):
 
     # Same normalisation, de-duplication and 10-word minimum as HC3
     df = preprocess(df)
+
     return df.assign(n_words=df["text"].str.split().str.len(), text_id=df.index)

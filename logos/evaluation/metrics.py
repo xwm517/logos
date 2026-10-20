@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.metrics import roc_auc_score
 
 
 def calibrate_threshold(scores, labels, target_fpr=0.01):
@@ -23,4 +24,11 @@ def tpr_at_threshold(scores, labels, tau):
 def fpr_at_threshold(scores, labels, tau):
     scores, labels = np.asarray(scores, dtype=float), np.asarray(labels, dtype=int)
     human = scores[labels == 0]
+
     return float(np.mean(human >= tau))
+
+
+def auroc(scores, labels):
+    # Threshold-free. How well scores rank machine above human across every possible threshold
+
+    return float(roc_auc_score(labels, scores))

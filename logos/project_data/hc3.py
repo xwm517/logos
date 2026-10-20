@@ -8,8 +8,10 @@ def clean_hc3(df):
         r"Too many requests in 1 hour|authentication token has expired|network error|"
         r"There was an error generating a response|ChatGPT Dec \d+ Version|Clear conversations"
     )
+
     # Remove text with HC3 specific API errors
     error = df["text"].str.contains(error_pattern, flags=re.IGNORECASE, na=False)
+
     return df[~error].drop_duplicates(subset="text").reset_index(drop=True)
 
 
@@ -24,6 +26,7 @@ def load_hc3():
         filename="all.jsonl",
         repo_type="dataset"
     )
+
     # Stream the .jsonl file as df
     raw = pd.read_json(path, lines=True)
 
@@ -33,6 +36,7 @@ def load_hc3():
     ]
 
     rows = []
+
     # Extract the human and ChatGPT answers and label them
     for index, row in raw.iterrows():
         for col, label, name in sources:
@@ -54,4 +58,5 @@ def load_hc3():
         # The project_data schema to be used for the project
         columns=["text", "label", "generator", "family", "domain", "question_id"]
     )
+
     return df
