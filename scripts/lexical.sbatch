@@ -15,4 +15,4 @@ module load Python/3.11.3-GCCcore-12.3.0
 source ~/venvs/logos/bin/activate
 cd ~/logos
 
-python scripts/run_lexical.py --task "$SLURM_ARRAY_TASK_ID"
+python scripts/run_lexical_baseline.py --task "$SLURM_ARRAY_TASK_ID"
