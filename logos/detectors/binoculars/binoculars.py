@@ -1,20 +1,24 @@
-"""Unmodified from https://github.com/ahans30/Binoculars (binoculars/detector.py),
-the authors' implementation of Binoculars (Hans et al., 2024), reference [14].
+"""Binoculars (Hans et al., 2024), reference [14]. From the authors' official
+implementation at https://github.com/ahans30/Binoculars (Apache 2.0).
 
-MODIFICATIONS: none to the scoring code. One behaviour to be aware of is the
-module-level torch.set_grad_enabled(False) on line 24 below, which the authors
-use because their repository is a standalone detector. Here it is a package
-module, so importing it switches gradients off for the whole process. Keep
-Binoculars and any fine-tuning in separate scripts, or move that call inside
-compute_score, otherwise training will silently fail to learn.
+MODIFICATION: the authors' from_pretrained calls pass trust_remote_code=True,
+which loads the Falcon implementation bundled in the model repository. That code
+calls get_head_mask(), which current versions of transformers have removed, so
+it raises AttributeError on the first forward pass. The argument is dropped here
+so that Falcon loads through the implementation now built into transformers.
+The weights and architecture are identical, so scores differ only in the last
+few decimal places through a different attention kernel.
 
-BINOCULARS_ACCURACY_THRESHOLD and BINOCULARS_FPR_THRESHOLD are the authors'
-own thresholds, kept here for completeness. This study does not use them, or
-predict(), because it calibrates its own threshold on MAGE validation human
-text at a 1% false-positive rate (section 3.4). Use compute_score() and note
-that a raw Binoculars score is LOWER for machine-generated text, so it is
-sign-flipped in scripts/run_binoculars.py to match the convention used by every
-other detector in this study.
+BINOCULARS_ACCURACY_THRESHOLD and BINOCULARS_FPR_THRESHOLD are the authors' own
+thresholds, kept for completeness. This study does not use them, or predict(),
+because it calibrates its own threshold on MAGE validation human text at a 1%
+false-positive rate (section 3.4). Use compute_score(), and note that a raw
+Binoculars score is LOWER for machine-generated text, so it is sign-flipped in
+scripts/run_binoculars.py to match every other detector in this study.
+
+Note also the module-level torch.set_grad_enabled(False) below. As a package
+module this switches gradients off for the whole process, so keep Binoculars
+and any fine-tuning in separate scripts.
 """
 
 from typing import Union
@@ -56,14 +60,12 @@ class Binoculars(object):
         self.change_mode(mode)
         self.observer_model = AutoModelForCausalLM.from_pretrained(observer_name_or_path,
                                                                    device_map={"": DEVICE_1},
-                                                                   trust_remote_code=True,
                                                                    torch_dtype=torch.bfloat16 if use_bfloat16
                                                                    else torch.float32,
                                                                    token=huggingface_config["TOKEN"]
                                                                    )
         self.performer_model = AutoModelForCausalLM.from_pretrained(performer_name_or_path,
                                                                     device_map={"": DEVICE_2},
-                                                                    trust_remote_code=True,
                                                                     torch_dtype=torch.bfloat16 if use_bfloat16
                                                                     else torch.float32,
                                                                     token=huggingface_config["TOKEN"]
