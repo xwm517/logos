@@ -31,7 +31,7 @@ from .metrics import perplexity, entropy
 torch.set_grad_enabled(False)
 
 huggingface_config = {
-    # Only required for private models from Huggingface (e.g. LLaMA models)
+    # Only required for private detectors from Huggingface (e.g. LLaMA detectors)
     "TOKEN": os.environ.get("HF_TOKEN", None)
 }
 

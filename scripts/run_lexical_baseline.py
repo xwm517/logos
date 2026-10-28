@@ -5,7 +5,7 @@ import pandas as pd
 from logos.paths import DATA_DIR
 from logos.project_data.mage import families
 from logos.evaluation.folds import load_training_set, calibration_set, test_set
-from logos.models.tf_idf import fit_lexical_baseline
+from logos.detectors.tf_idf import fit_lexical_baseline
 
 MAGE_DIR = DATA_DIR / "mage"
 SCORES_DIR = MAGE_DIR / "scores" / "lexical"

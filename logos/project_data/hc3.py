@@ -18,7 +18,7 @@ def clean_hc3(df):
 def load_hc3():
     """
     Getting all project_data instead of domain specific
-    will help the models generalise better,
+    will help the detectors generalise better,
     and for measuring domain shift
     """
     path = hf_hub_download(

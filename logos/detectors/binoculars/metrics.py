@@ -4,7 +4,7 @@ perplexity() measures how surprised the performer is by the tokens actually
 written, shifted by one position because the prediction made at position i is
 about the token appearing at position i + 1.
 
-entropy() measures how far the two models' predictions are from each other at
+entropy() measures how far the two detectors' predictions are from each other at
 each position. Note that it is deliberately NOT shifted, and that it masks on
 pad tokens rather than on the attention mask. Both differ from perplexity()
 above, and both are kept exactly as the authors wrote them.
