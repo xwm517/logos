@@ -16,5 +16,6 @@ source ~/venvs/logos/bin/activate
 cd ~/logos
 
 export HF_HOME=~/scratch/hf_cache
+export HF_HUB_OFFLINE=1
 
 python scripts/run_binoculars.py
