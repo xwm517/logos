@@ -1,24 +1,24 @@
-"""Binoculars (Hans et al., 2024), reference [14]. From the authors' official
-implementation at https://github.com/ahans30/Binoculars (Apache 2.0).
+"""Binoculars, from the authors' own code [14].
 
-MODIFICATION: the authors' from_pretrained calls pass trust_remote_code=True,
-which loads the Falcon implementation bundled in the model repository. That code
-calls get_head_mask(), which current versions of transformers have removed, so
-it raises AttributeError on the first forward pass. The argument is dropped here
-so that Falcon loads through the implementation now built into transformers.
-The weights and architecture are identical, so scores differ only in the last
-few decimal places through a different attention kernel.
+Copied from github.com/ahans30/Binoculars (Apache 2.0). The scoring maths is
+theirs, unchanged.
 
-BINOCULARS_ACCURACY_THRESHOLD and BINOCULARS_FPR_THRESHOLD are the authors' own
-thresholds, kept for completeness. This study does not use them, or predict(),
-because it calibrates its own threshold on MAGE validation human text at a 1%
-false-positive rate (section 3.4). Use compute_score(), and note that a raw
-Binoculars score is LOWER for machine-generated text, so it is sign-flipped in
-scripts/run_binoculars.py to match every other detector in this study.
+One change was needed. Their code loads Falcon with trust_remote_code=True,
+which pulls in an old copy of Falcon stored next to the model weights. That old
+copy no longer runs with current transformers, so it crashes on the first text.
+Dropping the argument loads Falcon with the same weights from transformers instead
 
-Note also the module-level torch.set_grad_enabled(False) below. As a package
-module this switches gradients off for the whole process, so keep Binoculars
-and any fine-tuning in separate scripts.
+In Binoculars, a raw score is lower for machine text. That is backwards from every other
+detector in this study, so run_binoculars.py flips the sign when it saves.
+
+The torch.set_grad_enabled(False) below turns gradients off for the whole
+program, not just this file. If anything imports this module in the same script
+as training code, that training will quietly learn nothing. Keep Binoculars in
+a script of its own.
+
+The two threshold numbers below are the authors' own. This study works out its
+own cut-off from MAGE's human texts (section 3.4), so they go unused, and so
+does predict(). Call compute_score().
 """
 
 from typing import Union

@@ -15,11 +15,13 @@ BATCH_SIZE = 8
 
 
 def main():
-    corpus = pd.read_parquet(MAGE_DIR / "corpus.parquet")
+    mage_df = pd.read_parquet(MAGE_DIR / "corpus.parquet")
+
     texts = pd.concat([
-        calibration_set(corpus).assign(part="calibration"),
-        test_set(corpus).assign(part="test"),
+        calibration_set(mage_df).assign(part="calibration"),
+        test_set(mage_df).assign(part="test"),
     ])
+
     print(f"scoring {len(texts)} texts")
 
     detector = Binoculars()
