@@ -256,6 +256,9 @@ def stylometric(text, stop_words=None):
         if any(char.isalpha() for char in word)
     ]
 
+    if not words:
+        return dict.fromkeys(FEATURE_NAMES, 0.0)
+
     length_mean, length_sd = sentence_length_stats(sentence_lengths)
 
     return {
