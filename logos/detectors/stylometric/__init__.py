@@ -1,0 +1,1 @@
+from .stylometric import StylometricDetector
