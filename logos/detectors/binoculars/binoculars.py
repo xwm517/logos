@@ -1,24 +1,22 @@
-"""Binoculars, from the authors' own code [14].
+"""Binoculars, from the authors' own released code [14].
 
 Copied from github.com/ahans30/Binoculars (Apache 2.0). The scoring maths is
-theirs, unchanged.
+theirs, unchanged. Appendix D records the two changes needed to run it under
+current library versions.
 
-One change was needed. Their code loads Falcon with trust_remote_code=True,
-which pulls in an old copy of Falcon stored next to the model weights. That old
-copy no longer runs with current transformers, so it crashes on the first text.
-Dropping the argument loads Falcon with the same weights from transformers instead
-
-In Binoculars, a raw score is lower for machine text. That is backwards from every other
-detector in this study, so run_binoculars.py flips the sign when it saves.
+Three things to know before using it.
 
 The torch.set_grad_enabled(False) below turns gradients off for the whole
-program, not just this file. If anything imports this module in the same script
-as training code, that training will quietly learn nothing. Keep Binoculars in
-a script of its own.
+program, not just this file. Importing this module in the same script as
+training code will make that training quietly learn nothing, so keep Binoculars
+in a script of its own.
 
-The two threshold numbers below are the authors' own. This study works out its
-own cut-off from MAGE's human texts (section 3.4), so they go unused, and so
-does predict(). Call compute_score().
+A raw score is LOWER for machine text, which is backwards from every other
+detector in this study. run_binoculars.py flips the sign when it saves.
+
+The two threshold constants below are the authors' own and go unused, as does
+predict(); this study calibrates its own cut-off (section 3.4). Call
+compute_score().
 """
 
 from typing import Union

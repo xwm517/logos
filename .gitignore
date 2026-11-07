@@ -1,17 +1,17 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-build/
-dist/
-
 .pytest_cache/
 .ipynb_checkpoints/
 .idea/
-.DS_Store
+.venv/
+venv/
 
-data/
-results/
-*.parquet
-checkpoints/
-*.pt
-*.bin
+# Rebuilt deterministically by notebooks 03 and 04 and by the feature script,
+# and too large for git. Detector scores are NOT ignored: they cost hours of
+# cluster time and cannot be regenerated cheaply.
+data/mage/corpus.parquet
+data/mage/training_sets.parquet
+data/mage/features/
+data/mage/models/
+data/hc3/features/
