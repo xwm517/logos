@@ -1,13 +1,8 @@
 """
 The 14 stylometric features that get added to DistilBERT's classifier head.
 
-Each feature is one number per text. None of them measures how long the text is,
-because the training pairs are length-matched and length is not a signal this
-detector is allowed to use.
-
-Thirteen of them are proportions between 0 and 1. Flesch reading ease is not, so
-the features have to be standardised before they are joined onto DistilBERT's
-output, with the standardiser fitted on training data only.
+Defined in Table D.2. The reasoning behind each choice is in Appendix D's notes
+and in sections 3.2 and 3.6; this module only implements them.
 """
 
 import statistics
@@ -19,9 +14,8 @@ from nltk import sent_tokenize, word_tokenize
 from collections import Counter
 from nltk.corpus import stopwords
 
-# NLTK keeps its tokeniser, tagger and word lists outside the package, and
-# renamed two of them in version 3.9, so both the old and new names are listed.
-# textstat counts syllables with pyphen, so cmudict is not needed.
+# NLTK renamed the tokeniser and tagger in version 3.9, so both names are listed.
+# cmudict is not needed: textstat counts syllables with pyphen.
 NLTK_RESOURCES = [
     ("tokenizers/punkt_tab", "punkt_tab"),
     ("tokenizers/punkt", "punkt"),
@@ -30,8 +24,8 @@ NLTK_RESOURCES = [
     ("corpora/stopwords", "stopwords"),
 ]
 
-# The order here is the order the features are fed to the classifier, so it must
-# stay the same between training and scoring.
+# This order is the order the features reach the classifier, so it must not
+# change between training and scoring.
 FEATURE_NAMES = [
     "sentence_length_mean",
     "sentence_length_sd",
@@ -49,54 +43,45 @@ FEATURE_NAMES = [
     "flesch_reading_ease",
 ]
 
-# 25 is small, but the corpus keeps texts down to ten words, and a bigger window
-# would send too many of them down the fallback branch in mattr().
 MATTR_WINDOW = 25
 
 # Listed out rather than taken from string.punctuation, which also holds $ % & *
-# and friends. Those are symbols, so a price or an email would read as heavy
-# punctuation.
+# and other symbols.
 PUNCTUATION = set(".,;:!?-—'\"()[]{}/")
 
-# Penn Treebank tags, which is what nltk.pos_tag gives back. Note that
-# past_tense_tags is a subset of verb_tags, so those two features overlap on
-# purpose. Modals (can, will, should) are tagged MD and so do not count as verbs.
+# Penn Treebank tags, from nltk.pos_tag. PAST_TENSE_TAGS is a subset of
+# VERB_TAGS, so those two features overlap by construction.
 NOUN_TAGS = {"NN", "NNS", "NNP", "NNPS"}
 VERB_TAGS = {"VB", "VBD", "VBG", "VBN", "VBP", "VBZ"}
 PAST_TENSE_TAGS = {"VBD", "VBN"}
 ADVERB_TAGS = {"RB", "RBR", "RBS"}
 PRONOUN_TAGS = {"PRP", "PRP$", "WP", "WP$"}
 
-# Penn Treebank has no first-person tag: PRP covers I, you, he, she, it, we and
-# they together. So this one needs a word list. The tag is checked as well, which
-# keeps "the gold mine" from counting and keeps this feature a subset of
-# pronoun_rate.
+# Penn Treebank has no first-person tag, so this feature needs a word list.
 FIRST_PERSON_WORDS = {
     "i", "me", "my", "mine", "myself",
     "we", "us", "our", "ours", "ourselves",
 }
 PERSONAL_PRONOUN_TAGS = {"PRP", "PRP$"}
 
-# The tokeniser splits contractions, so "don't" arrives as "do" and "n't". These
-# are the pieces it leaves behind. Note that "'s" also catches possessives, so
-# "the cat's bowl" counts as a contraction.
+# What the tokeniser leaves behind when it splits a contraction: "don't" becomes
+# "do" and "n't". "'s" also catches possessives, which this cannot tell apart.
 CONTRACTION_FRAGMENTS = {"n't", "'s", "'re", "'ve", "'ll", "'d", "'m"}
 
 
 def words_in(tokens):
     """
-    Keep the tokens that count as words.
+    Keep the tokens with at least one letter in them.
 
-    A token needs at least one letter, so full stops and bare numbers are
-    dropped while words like "don't" are kept. Keeping contractions matters,
-    because contraction_rate divides by this count.
+    Contractions have to survive this, because contraction_rate divides by the
+    count it returns.
     """
     return [token for token in tokens if any(n.isalpha() for n in token)]
 
 
 def sentence_length_stats(sentence_lengths):
-    # pstdev, not stdev. A text's sentences are the whole thing being measured,
-    # not a sample of something bigger, so this divides by n rather than n - 1.
+    # pstdev, not stdev: a text's sentences are the whole population, so this
+    # divides by n rather than n - 1.
     if not sentence_lengths:
         return 0.0, 0.0
 
@@ -105,19 +90,14 @@ def sentence_length_stats(sentence_lengths):
 
 def mattr(words, window=MATTR_WINDOW):
     """
-    Moving-average type-token ratio (Covington and McFall, 2010).
-
-    The plain type-token ratio drops as a text gets longer, because the further
-    you read the likelier the next word is one already used. So it partly
-    measures length. This takes the ratio inside a window of fixed size, slides
-    the window along one word at a time, and averages. Every window is the same
-    size, so the answer does not depend on the length of the text.
+    Moving-average type-token ratio [60], computed by the rapid algorithm in
+    that paper. Expects words already lowercased. Window choice: Appendix D.
     """
     if not words:
         return 0.0
 
-    # Too short for a window, so fall back to the plain ratio. That version does
-    # depend on length, which is worth remembering when reading the results.
+    # Too short for a window, so it falls back to the plain ratio, which does
+    # depend on text length. Appendix D reports how often this happens.
     if len(words) <= window:
         return len(set(words)) / len(words)
 
@@ -128,8 +108,8 @@ def mattr(words, window=MATTR_WINDOW):
         leaving = words[index - window]
         counts[leaving] -= 1
 
-        # This delete is doing real work. Counter keeps an entry sitting at zero,
-        # and len(counts) would then count words that have already left.
+        # Load-bearing. Counter keeps entries sitting at zero, and len(counts)
+        # would then count words that have already left the window.
         if counts[leaving] == 0:
             del counts[leaving]
 
@@ -142,12 +122,8 @@ def mattr(words, window=MATTR_WINDOW):
 
 
 def hapax_rate(words):
-    """
-    The share of a text's distinct words that it uses exactly once.
-
-    Divided by distinct words, not total words. The per-word version falls
-    steeply as texts get longer, so it ends up measuring length.
-    """
+    # Divided by distinct words, not total words. Expects words already
+    # lowercased.
     if not words:
         return 0.0
 
@@ -158,8 +134,8 @@ def hapax_rate(words):
 
 
 def stopword_rate(words, stop_words):
-    # The list is passed in rather than built here, because building it once is
-    # cheap and building it 392,385 times is not.
+    # The list is passed in because building it once is cheap and building it
+    # per text is not. Expects words already lowercased.
     if not words:
         return 0.0
 
@@ -167,9 +143,8 @@ def stopword_rate(words, stop_words):
 
 
 def punctuation_rate(text):
-    # Counted over characters, including spaces, rather than over words. Done on
-    # the raw text so the answer does not depend on how the tokeniser split
-    # things up. This is the only feature that works this way.
+    # Takes the raw text, not the word list, and divides by characters rather
+    # than words. The only feature of the fourteen that does.
     if not text:
         return 0.0
 
@@ -177,7 +152,6 @@ def punctuation_rate(text):
 
 
 def tag_rate(tagged, wanted):
-    """What share of the tagged words carry one of the tags being looked for."""
     if not tagged:
         return 0.0
 
@@ -185,8 +159,8 @@ def tag_rate(tagged, wanted):
 
 
 def first_person_rate(tagged):
-    # The word has to be in the list AND be tagged as a pronoun. Without the
-    # lower() every capitalised one is missed, and "I" is always capitalised.
+    # Needs both the word list and the pronoun tag. Without lower() every
+    # capitalised match is missed, and "I" is always capitalised.
     if not tagged:
         return 0.0
 
@@ -198,6 +172,7 @@ def first_person_rate(tagged):
 
 
 def contraction_rate(words):
+    # Expects words already lowercased.
     if not words:
         return 0.0
 
@@ -206,16 +181,9 @@ def contraction_rate(words):
 
 def flesch_reading_ease(words, sentence_count):
     """
-    Flesch reading ease, in the form given in Flesch (1948).
-
-    Higher means easier to read. The score is not a proportion: it runs from
-    about -100 to +120, and is deliberately not clamped, because short simple
-    sentences can legitimately score above 100.
-
-    Syllables come from textstat, and words and sentences are counted by this
-    study's own rules rather than Flesch's manual ones, which treated figures as
-    words. On the two sample passages in the paper this scores 48.2 and 68.4
-    against his published 46 and 66.
+    Flesch reading ease in the form given in [63]. Not a proportion: it runs
+    from about -100 to +120 and is deliberately not clamped. Appendix D records
+    how this implementation compares with Flesch's own published scores.
     """
     if not words or sentence_count == 0:
         return 0.0
@@ -228,27 +196,21 @@ def flesch_reading_ease(words, sentence_count):
 
 
 def stylometric(text, stop_words=None):
-    """
-    All 14 features for one text, as a dictionary.
-
-    A text with no words in it comes back as all zeros rather than raising, so
-    one bad row cannot stop a corpus-wide run.
-    """
+    """All 14 features for one text, keyed by FEATURE_NAMES."""
     if stop_words is None:
         stop_words = set(stopwords.words("english"))
 
-    # Split into sentences first, then words within each sentence, so the
-    # sentence lengths and the flat word list come from one pass and cannot
-    # disagree with each other.
+    # Sentences first, then words within each sentence, so the sentence lengths
+    # and the flat word list come from one pass and cannot disagree.
     sentence_tokens = [word_tokenize(sentence) for sentence in sent_tokenize(text)]
     sentence_words = [words_in(tokens) for tokens in sentence_tokens]
     sentence_lengths = [len(sentence) for sentence in sentence_words if sentence]
     words = [word for sentence in sentence_words for word in sentence]
     lowercase_words = [word.lower() for word in words]
 
-    # Tag each sentence with its punctuation still in place, then drop the
-    # punctuation from the result. The tagger uses nearby tokens as context, so
-    # removing full stops first makes it guess sentence starts wrongly.
+    # Tag with the punctuation still in place, then drop it. The tagger uses
+    # nearby tokens as context, so stripping full stops first makes it mistake
+    # where sentences start.
     tagged = [
         (word, tag)
         for tokens in sentence_tokens
@@ -256,6 +218,9 @@ def stylometric(text, stop_words=None):
         if any(char.isalpha() for char in word)
     ]
 
+    # All fourteen zero is the signal that a text had no usable words. Without
+    # this, punctuation_rate would still return a value because it reads the raw
+    # text, and run_stylometric_features.py counts these rows.
     if not words:
         return dict.fromkeys(FEATURE_NAMES, 0.0)
 
@@ -280,11 +245,7 @@ def stylometric(text, stop_words=None):
 
 
 def features_frame(texts, show_progress=False):
-    """All 14 features for a list of texts, one row each.
-
-    The stop-word list is built once here rather than once per text, which is
-    the reason stylometric() takes it as an argument.
-    """
+    """All 14 features for a list of texts, one row each."""
     stop_words = set(stopwords.words("english"))
     rows = []
 
@@ -294,16 +255,15 @@ def features_frame(texts, show_progress=False):
 
         rows.append(stylometric(text, stop_words))
 
-    # Columns are selected by name, so FEATURE_NAMES fixes the order the
-    # classifier sees. Any name missing from that list is silently dropped.
+    # Columns are picked by name, so a name missing from FEATURE_NAMES is
+    # silently dropped.
     return pd.DataFrame(rows, columns=FEATURE_NAMES)
 
 
 def ensure_nltk_data():
-    """Download whatever NLTK data is missing.
-
-    Safe to call more than once. Worth calling on a login node before
-    submitting a job, because compute nodes may have no network access.
+    """
+    Download whatever NLTK data is missing. Safe to call repeatedly, and worth
+    calling on a login node, because compute nodes may have no network access.
     """
     missing = []
 
