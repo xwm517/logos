@@ -29,6 +29,20 @@ def fpr_at_threshold(scores, labels, tau):
 
 
 def auroc(scores, labels):
-    # Threshold-free. How well scores rank machine above human across every possible threshold
-
     return float(roc_auc_score(labels, scores))
+
+
+def cohens_d(values, labels):
+    human = values[labels == 0]
+    machine = values[labels == 1]
+
+    n_human, n_machine = len(human), len(machine)
+    pooled = np.sqrt(
+        ((n_human - 1) * human.var(ddof=1) + (n_machine - 1) * machine.var(ddof=1))
+        / (n_human + n_machine - 2)
+    )
+
+    if pooled == 0:
+        return 0.0
+
+    return (machine.mean() - human.mean()) / pooled
