@@ -11,12 +11,12 @@ from logos.paths import DATA_DIR
 from logos.project_data.mage import families
 from logos.evaluation.folds import load_training_set, calibration_set, test_set
 from logos.features.stylometric import FEATURE_NAMES
-from logos.detectors.stylometric import StylometricDataset, StylometricDetector, score, train
+from logos.detectors.stylometric_neural import StylometricDataset, StylometricDetector, score, train
 
 MAGE_DIR = DATA_DIR / "mage"
 FEATURES_PATH = MAGE_DIR / "features" / "stylometric.parquet"
-SCORES_DIR = MAGE_DIR / "scores" / "stylometric"
-MODELS_DIR = MAGE_DIR / "models" / "stylometric"
+SCORES_DIR = MAGE_DIR / "scores" / "stylometric_neural"
+MODELS_DIR = MAGE_DIR / "models" / "stylometric_neural"
 
 SEEDS = [0, 1, 2, 3, 4]
 SET_NAMES = ["In-distribution"] + [f"LOFO {family}" for family in families]
