@@ -9,7 +9,7 @@ c_grid = [1/64, 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16, 32, 64]
 def lexical_baseline(C=1.0, seed=0):
     return make_pipeline(
         TfidfVectorizer(ngram_range=(1, 2), min_df=5, max_features=2**21),
-        LogisticRegression(C=C, solver="liblinear", class_weight="balanced", random_state=seed),
+        LogisticRegression(C=C, solver="liblinear", random_state=seed),
     )
 
 
