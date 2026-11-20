@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics import roc_auc_score
+from scipy.stats import ttest_ind
 
 
 def calibrate_threshold(scores, labels, target_fpr=0.01):
@@ -46,3 +47,7 @@ def cohens_d(values, labels):
         return 0.0
 
     return (machine.mean() - human.mean()) / pooled
+
+
+def welch_p(a, b):
+    return ttest_ind(a, b, equal_var=False).pvalue
