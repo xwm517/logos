@@ -2,7 +2,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 
-# The C values searched by OpenAI's GPT-2 output baseline [52], [53]
+# Configuration and C grid of OpenAI's released GPT-2 output baseline
+# (Solaiman et al., 2019; openai/gpt-2-output-dataset, baseline.py)
 c_grid = [1/64, 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16, 32, 64]
 
 
